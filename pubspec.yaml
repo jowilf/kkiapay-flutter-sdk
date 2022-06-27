@@ -10,12 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http: ^0.13.3
-
-  #webview_flutter: ^0.3.1
-  flutter_webview_plugin:
-    git: https://github.com/snoopdoggy322/flutter_webview_plugin
-  cupertino_icons: ^1.0.3
+  http: ^0.13.4
+  webview_flutter: ^3.0.4
+  cupertino_icons: ^1.0.5
 
 dev_dependencies:
   flutter_test:

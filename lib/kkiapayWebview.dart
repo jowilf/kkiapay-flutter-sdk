@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+
 import 'kkiapayConf.sample.dart';
 
 class KKiaPay extends StatefulWidget {
@@ -40,7 +42,8 @@ class KKiaPay extends StatefulWidget {
 }
 
 class _KKiaPayState extends State<KKiaPay> {
-  final flutterWebViewPlugin = FlutterWebviewPlugin();
+  final Completer<WebViewController> _controller =
+      Completer<WebViewController>();
   final int? amount;
   final String? phone;
   final String? data;
@@ -69,28 +72,32 @@ class _KKiaPayState extends State<KKiaPay> {
   @override
   void initState() {
     super.initState();
-    flutterWebViewPlugin.onUrlChanged.listen((String url) async {
+    if (Platform.isAndroid) {
+      WebView.platform = SurfaceAndroidWebView();
+    }
+    /* flutterWebViewPlugin.onUrlChanged.listen((String url) async {
       if (mounted) {
         if (url.startsWith('http://redirect.kkiapay.me')) {
-          /**
-           * Payment Done with success
-           */
+          */ /**
+                  * Payment Done with success
+                  */ /*
           final link = Uri.parse(url);
           final transactionId = link.queryParameters['transaction_id'];
-          callback!({'amount': amount, 'transactionId': transactionId}, context);
+          callback!(
+              {'amount': amount, 'transactionId': transactionId}, context);
           flutterWebViewPlugin.dispose();
           flutterWebViewPlugin.hide();
 
           // implement action of success payment
         }
       }
-    });
+    });*/
   }
 
   @override
   void dispose() {
-    flutterWebViewPlugin.close();
-    flutterWebViewPlugin.dispose();
+    // flutterWebViewPlugin.close();
+    // flutterWebViewPlugin.dispose();
     super.dispose();
   }
 
@@ -104,9 +111,34 @@ class _KKiaPayState extends State<KKiaPay> {
 
   @override
   Widget build(BuildContext context) {
-    final url =
+    final _initialUrl =
         '$KKiaPayURL/?=${_SdkData(amount: this.amount, phone: this.phone, data: this.data, sandbox: this.sandbox, apikey: this.apikey, theme: this.theme, name: this.name).toBase64()}';
-    return WebviewScaffold(
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: WebView(
+          initialUrl: _initialUrl,
+          javascriptMode: JavascriptMode.unrestricted,
+          onWebViewCreated: (WebViewController webViewController) {
+            _controller.complete(webViewController);
+          },
+          navigationDelegate: (NavigationRequest request) {
+            if (request.url.startsWith('http://redirect.kkiapay.me')) {
+              final link = Uri.parse(url);
+              final transactionId = link.queryParameters['transaction_id'];
+              callback!({
+                'amount': amount,
+                'transactionId': transactionId,
+              }, context);
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      ),
+    );
+    /*return WebviewScaffold(
       url: url,
       withZoom: false,
       withLocalStorage: true,
@@ -122,7 +154,7 @@ class _KKiaPayState extends State<KKiaPay> {
           child: CircularProgressIndicator(),
         ),
       ),
-    );
+    );*/
   }
 }
 
